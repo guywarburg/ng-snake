@@ -18,7 +18,8 @@ export class SnakeWrapperComponent implements OnInit {
   private allFood: Food[] = [];
   private round: number = 1;
   private mySnake: Snake;
-  private gamePlay;
+  private gamePlay; // game interval
+  private nextMoveDirection: number = Direction.RIGHT;
 
   @ViewChild('myCanvas') canvasRef: ElementRef;
 
@@ -26,33 +27,17 @@ export class SnakeWrapperComponent implements OnInit {
   handleKeyboardEvent(e: KeyboardEvent) {
     switch (e.which) {
       case ArrowKeys.LEFT:
-        if (this.mySnake.direction === Direction.RIGHT) {
-          break;
-        }
-        this.mySnake.direction = Direction.LEFT;
+        this.nextMoveDirection = Direction.LEFT;
         break;
-
       case ArrowKeys.UP:
-        if (this.mySnake.direction === Direction.DOWN) {
-          break;
-        }
-        this.mySnake.direction = Direction.UP;
+        this.nextMoveDirection = Direction.UP;
         break;
-
       case ArrowKeys.RIGHT:
-        if (this.mySnake.direction === Direction.LEFT) {
-          break;
-        }
-        this.mySnake.direction = Direction.RIGHT;
+        this.nextMoveDirection = Direction.RIGHT;
         break;
-
       case ArrowKeys.DOWN:
-        if (this.mySnake.direction === Direction.UP) {
-          break;
-        }
-        this.mySnake.direction = Direction.DOWN;
+        this.nextMoveDirection = Direction.DOWN;
         break;
-
       default:
         return; // exit this handler for other keys
     }
@@ -136,6 +121,7 @@ export class SnakeWrapperComponent implements OnInit {
   }
 
   testAndMoveSnake() {
+    this.testMoveDirection();
     this.mySnake.move(this.allFood);
     if (this.testForFood() && this.noMoreFood()) {
         this.levelUp();
@@ -145,6 +131,32 @@ export class SnakeWrapperComponent implements OnInit {
     if (this.testForWall() || this.testForSelf()) {
       this.gameOver();
     }
+  }
+
+  testMoveDirection() {
+    switch(this.nextMoveDirection) {
+      case Direction.UP:
+        if(this.mySnake.direction === Direction.DOWN) {
+          return;
+        }
+        break;
+      case Direction.RIGHT:
+        if(this.mySnake.direction === Direction.LEFT) {
+          return;
+        }
+        break;
+      case Direction.LEFT:
+        if(this.mySnake.direction === Direction.RIGHT) {
+          return;
+        }
+        break;
+      case Direction.DOWN:
+        if(this.mySnake.direction === Direction.UP) {
+          return;
+        }
+        break;
+    }
+    this.mySnake.direction = this.nextMoveDirection;
   }
 
   testForFood() {
