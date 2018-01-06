@@ -6,49 +6,51 @@ import {Component, ElementRef, HostListener, OnInit, ViewChild} from '@angular/c
   styleUrls: ['./snake-wrapper.component.scss']
 })
 export class SnakeWrapperComponent implements OnInit {
-  h = 400;
-  w = 400;
-  intervalSpeed = 100;
-  size = 10;
-  ctx: CanvasRenderingContext2D;
+  private h: number = 400;
+  private w: number = 400;
+  private snakeColor: string = '#fff';
+  private bgColor: string = '#333';
+  private foodColor: string = '#45f043';
+  private intervalSpeed: number = 100;
+  private size: number = 10;
+  private ctx: CanvasRenderingContext2D;
 
-  allFood;
-  round: number;
-  mySnake: Snake;
-  gamePlay;
+  private allFood: Food[] = [];
+  private round: number = 1;
+  private mySnake: Snake;
+  private gamePlay;
 
   @ViewChild('myCanvas') canvasRef: ElementRef;
 
   @HostListener('document:keydown', ['$event'])
   handleKeyboardEvent(e: KeyboardEvent) {
-    debugger;
     switch (e.which) {
-      case 37: // left
-        if (this.mySnake.direction === Arrowkey.RIGHT) {
+      case ArrowKeys.LEFT:
+        if (this.mySnake.direction === Direction.RIGHT) {
           break;
         }
-        this.mySnake.direction = Arrowkey.LEFT;
+        this.mySnake.direction = Direction.LEFT;
         break;
 
-      case 38: // up
-        if (this.mySnake.direction === Arrowkey.DOWN) {
+      case ArrowKeys.UP:
+        if (this.mySnake.direction === Direction.DOWN) {
           break;
         }
-        this.mySnake.direction = Arrowkey.UP;
+        this.mySnake.direction = Direction.UP;
         break;
 
-      case 39: // right
-        if (this.mySnake.direction === Arrowkey.LEFT) {
+      case ArrowKeys.RIGHT:
+        if (this.mySnake.direction === Direction.LEFT) {
           break;
         }
-        this.mySnake.direction = Arrowkey.RIGHT;
+        this.mySnake.direction = Direction.RIGHT;
         break;
 
-      case 40: // down
-        if (this.mySnake.direction === Arrowkey.UP) {
+      case ArrowKeys.DOWN:
+        if (this.mySnake.direction === Direction.UP) {
           break;
         }
-        this.mySnake.direction = Arrowkey.DOWN;
+        this.mySnake.direction = Direction.DOWN;
         break;
 
       default:
@@ -57,8 +59,7 @@ export class SnakeWrapperComponent implements OnInit {
     e.preventDefault(); // prevent the default action (scroll / move caret)
   }
 
-  constructor() {
-  }
+  constructor() {}
 
   ngOnInit() {
     this.ctx = this.canvasRef.nativeElement.getContext('2d');
@@ -66,12 +67,11 @@ export class SnakeWrapperComponent implements OnInit {
   }
 
   initGame() {
-    this.allFood = [];
-    this.round = 1;
-    this.intervalSpeed = 100;
+    // setup variables
     this.mySnake = this.initSnake(0, 0);
-    this.drawSnake(this.mySnake);
     this.allFood = this.makeFood(this.round);
+    // Draw to canvas
+    this.drawSnake(this.mySnake);
     this.drawFood();
     this.setGameInterval();
   }
@@ -79,17 +79,7 @@ export class SnakeWrapperComponent implements OnInit {
   setGameInterval() {
     this.gamePlay = setInterval(() => {
       this.clearRect();
-      this.mySnake.move(this.allFood);
-      if (this.testForFood()) {
-        if (this.noMoreFood()) {
-          this.levelUp();
-        }
-      } else {
-        this.mySnake.removeNode();
-      }
-      if (this.testForWall() || this.testForSelf()) {
-        this.gameOver();
-      }
+      this.testAndMoveSnake();
       this.drawSnake(this.mySnake);
       this.drawFood();
     }, this.intervalSpeed);
@@ -105,7 +95,7 @@ export class SnakeWrapperComponent implements OnInit {
   drawSnake(snake: Snake): void {
     const head = snake.head;
     while (snake.head !== null) {
-      this.ctx.fillStyle = '#fff';
+      this.ctx.fillStyle = this.snakeColor;
       this.ctx.fillRect(snake.head.x, snake.head.y, this.size, this.size);
       // move to next node;
       snake.head = snake.head.prev;
@@ -114,7 +104,7 @@ export class SnakeWrapperComponent implements OnInit {
   }
 
   clearRect() {
-    this.ctx.fillStyle = '#333';
+    this.ctx.fillStyle = this.bgColor;
     this.ctx.rect(0, 0, this.w, this.h);
     this.ctx.fill();
   }
@@ -131,7 +121,7 @@ export class SnakeWrapperComponent implements OnInit {
   drawFood() {
     for (let i = 0; i < this.allFood.length; i++) {
       if (this.allFood[i].visible) {
-        this.ctx.fillStyle = '#45f043';
+        this.ctx.fillStyle = this.foodColor;
         this.ctx.fillRect(this.allFood[i].x, this.allFood[i].y, this.size, this.size);
       }
     }
@@ -145,26 +135,34 @@ export class SnakeWrapperComponent implements OnInit {
     return temp;
   }
 
-  testForFood() {
-    for (let i = 0; i < this.allFood.length; i++) {
-      if (this.allFood[i].x === this.mySnake.head.x) {
-        if (this.allFood[i].y === this.mySnake.head.y) {
-          this.allFood[i].visible = false;
-          return true;
-        }
-      }
+  testAndMoveSnake() {
+    this.mySnake.move(this.allFood);
+    if (this.testForFood() && this.noMoreFood()) {
+        this.levelUp();
+    } else {
+      this.mySnake.removeNode();
     }
-    return false;
+    if (this.testForWall() || this.testForSelf()) {
+      this.gameOver();
+    }
+  }
+
+  testForFood() {
+    const foodToEat = this.allFood.find(foodItem => this.cellOverlap(foodItem, this.mySnake.head));
+    if(foodToEat !== undefined) {
+      foodToEat.eat();
+      return true;
+    }
+    return status;
+  }
+
+  cellOverlap(item1, item2) {
+    return (item1.x === item2.x) && (item1.y === item2.y);
   }
 
   noMoreFood() {
-    let count = 0;
-    for (let i = 0; i < this.allFood.length; i++) {
-      if (!this.allFood[i].visible) {
-        count++;
-      }
-    }
-    if (count === this.allFood.length) {
+    const removedFood = this.allFood.reduce((acc, curr) => acc - curr.visible, this.allFood.length);
+    if (removedFood === this.allFood.length) {
       return true;
     }
     return false;
@@ -183,7 +181,7 @@ export class SnakeWrapperComponent implements OnInit {
     const head = this.mySnake.head;
     this.mySnake.head = this.mySnake.head.prev;
     while (this.mySnake.head !== null) {
-      if (head.x === this.mySnake.head.x && head.y === this.mySnake.head.y) {
+      if (this.cellOverlap(head, this.mySnake.head)) {
         return true;
       }
       // move to next node;
@@ -198,14 +196,13 @@ export class SnakeWrapperComponent implements OnInit {
       this.clearRect();
     }, this.intervalSpeed);
     clearInterval(this.gamePlay);
-    // $('#modal').show();
+    // TODO - reveal game over modal
   }
 
   levelUp() {
     this.round++;
     this.allFood = this.makeFood(this.round);
     this.intervalSpeed *= 0.6;
-    // $('#level').text(round);
   }
 }
 
@@ -237,7 +234,7 @@ class Snake {
     const node = new SnakeNode(x, y);
     this.head = node;
     this.tail = node;
-    this.direction = Arrowkey.RIGHT;
+    this.direction = Direction.RIGHT;
     this.length = 1;
   }
 
@@ -262,19 +259,19 @@ class Snake {
     let newX, newY;
     const size = 10; // TODO abstract from class
     switch (this.direction) {
-      case Arrowkey.UP:
+      case Direction.UP:
         newX = this.head.x;
         newY = this.head.y - size;
         break;
-      case Arrowkey.RIGHT:
+      case Direction.RIGHT:
         newX = this.head.x + size;
         newY = this.head.y;
         break;
-      case Arrowkey.DOWN:
+      case Direction.DOWN:
         newX = this.head.x;
         newY = this.head.y + size;
         break;
-      case Arrowkey.LEFT:
+      case Direction.LEFT:
       default:
         newX = this.head.x - size;
         newY = this.head.y;
@@ -300,9 +297,16 @@ class Food {
   }
 }
 
-const Arrowkey = {
+const Direction = {
   UP: 0,
   RIGHT: 1,
   DOWN: 2,
   LEFT: 3
 };
+
+const ArrowKeys = {
+  UP: 38,
+  RIGHT: 39,
+  DOWN: 40,
+  LEFT: 37
+}
