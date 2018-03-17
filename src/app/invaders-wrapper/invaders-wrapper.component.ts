@@ -1,13 +1,13 @@
-import { Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 
 @Component({
-  selector: 'snake-wrapper',
-  templateUrl: './snake-wrapper.component.html',
-  styleUrls: ['./snake-wrapper.component.scss']
+  selector: 'invaders-wrapper',
+  templateUrl: './invaders-wrapper.component.html',
+  styleUrls: ['./invaders-wrapper.component.scss']
 })
-export class SnakeWrapperComponent implements OnInit {
-  public h: number = 400;
-  public w: number = 400;
+export class InvadersWrapperComponent implements OnInit {
+  private h: number = 400;
+  private w: number = 400;
   private snakeColor: string = '#fff';
   private bgColor: string = '#333';
   private foodColor: string = '#45f043';
