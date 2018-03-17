@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
 
 @Component({
   selector: 'invaders-wrapper',
@@ -6,37 +6,38 @@ import { Component, OnInit } from '@angular/core';
   styleUrls: ['./invaders-wrapper.component.scss']
 })
 export class InvadersWrapperComponent implements OnInit {
-  private h: number = 400;
-  private w: number = 400;
-  private snakeColor: string = '#fff';
-  private bgColor: string = '#333';
-  private foodColor: string = '#45f043';
-  private intervalSpeed: number = 100;
-  private size: number = 10;
-  private ctx: CanvasRenderingContext2D;
+  public h: number;
+  public w: number;
 
-  private allFood: Food[] = [];
-  private round: number = 1;
-  private mySnake: Snake;
-  private gamePlay; // game interval
-  private nextMoveDirection: number = Direction.RIGHT;
+  private baseColor: string;
+  private bgColor: string;
+
+  private baseSize: number;
+  private baseSpeed: number;
+
+  private ctx: CanvasRenderingContext2D;
+  private gamePlay: Interval;
+
+  private invaders: Invaders[];
+  private defensiveBlocks: DefensiveBlock[];
+  private userBullets: Bullet[];
+  private invadersBullets: Bullet[];
+  private player: Player;
 
   @ViewChild('myCanvas') canvasRef: ElementRef;
 
   @HostListener('document:keydown', ['$event'])
   handleKeyboardEvent(e: KeyboardEvent) {
+    let nextMoveDirection: number;
     switch (e.which) {
       case ArrowKeys.LEFT:
-        this.nextMoveDirection = Direction.LEFT;
-        break;
-      case ArrowKeys.UP:
-        this.nextMoveDirection = Direction.UP;
+        nextMoveDirection = Direction.LEFT;
         break;
       case ArrowKeys.RIGHT:
-        this.nextMoveDirection = Direction.RIGHT;
+        nextMoveDirection = Direction.RIGHT;
         break;
-      case ArrowKeys.DOWN:
-        this.nextMoveDirection = Direction.DOWN;
+      case ArrowKeys.SPACE:
+        nextMoveDirection = Direction.SPACE;
         break;
       default:
         return; // exit this handler for other keys
@@ -44,30 +45,43 @@ export class InvadersWrapperComponent implements OnInit {
     e.preventDefault(); // prevent the default action (scroll / move caret)
   }
 
-  constructor() {}
+  constructor(gameSettings: GameSettings) {
+    const { boardHeight, boardWidth, baseColor, bgColor, baseSize, baseSpeed } = gameSettings;
+
+    this.h = boardHeight || 400;
+    this.w = boardWidth || 400;
+    this.baseColor = baseColor || '#fff';
+    this.bgColor = bgColor || '#333';
+    this.baseSize = baseSize || 10;
+    this.baseSpeed = baseSpeed || 100;
+  }
 
   ngOnInit() {
     this.ctx = this.canvasRef.nativeElement.getContext('2d');
     this.initGame();
+    this.setGameInterval();
   }
 
   initGame() {
     // setup variables
-    this.mySnake = this.initSnake(0, 0);
-    this.allFood = this.makeFood(this.round);
-    // Draw to canvas
-    this.drawSnake(this.mySnake);
-    this.drawFood();
-    this.setGameInterval();
+    // generate invader
+    // generate blocks
+    // generate player
   }
 
   setGameInterval() {
     this.gamePlay = setInterval(() => {
-      this.clearRect();
-      this.testAndMoveSnake();
-      this.drawSnake(this.mySnake);
-      this.drawFood();
-    }, this.intervalSpeed);
+      this.updateState();
+      this.checkForCollisions();
+      this.drawBoard();
+    }, this.baseSpeed);
+  }
+
+  updateState() {
+    this.moveInvaders();
+    this.moveInvaderBullets();
+    this.movePlayerBullets();
+    this.movePlayer();
   }
 
   initSnake(x: number, y: number): Snake {
@@ -314,15 +328,22 @@ class Food {
 }
 
 const Direction = {
-  UP: 0,
-  RIGHT: 1,
-  DOWN: 2,
-  LEFT: 3
+  RIGHT: 0,
+  LEFT: 1,
+  SPACE: 3
 };
 
 const ArrowKeys = {
-  UP: 38,
   RIGHT: 39,
-  DOWN: 40,
-  LEFT: 37
+  LEFT: 37,
+  SPACE: 32
 };
+
+export interface GameSettings {
+  boardHeight: number;
+  boardWidth: number;
+  baseColor: string;
+  bgColor: string;
+  baseSize: number;
+  baseSpeed: number;
+}
