@@ -1,0 +1,18 @@
+.square1 {
+  height: 30px;
+  width: 30px;
+  background-color: lightblue;
+  animation: loader 4s infinite;
+}
+
+@keyframes loader {
+  25% {
+    transform: perspective(30px) rotate3d(0, 2, 0, 180deg); //, translate3D(200%, 0, 0);
+  }
+  //   50% {
+  //     transform: rotate3d(0, 2, 5, 180deg); //, translate(200%, 200%);
+  //   }
+  //   75% {
+  //     transform: rotate3d(0, 2, 0, 180deg), translateY(200%);
+  //   }
+}
