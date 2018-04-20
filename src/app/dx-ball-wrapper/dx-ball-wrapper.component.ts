@@ -78,7 +78,6 @@ export class DxBallWrapperComponent implements OnInit {
 
       this.testAndMovePlayer();
       this.drawPlayer(this.myPlayer);
-
       this.moveBall(this.myBall);
       this.drawBall(this.myBall);
       this.drawBricks();
@@ -105,7 +104,10 @@ export class DxBallWrapperComponent implements OnInit {
     const arr = [];
     // extract round schemas
     for (let i = 0; i < 3; i++) {
-      const x = 0 + i * this.size * this.BRICK_WIDTH;
+      let x = i * this.size * this.BRICK_WIDTH;
+      if (i) {
+        x += this.size * i;
+      }
       const y = this.h / 2;
       arr.push(new Brick(x, y, this.BRICK_WIDTH, this.size));
     }
@@ -145,10 +147,13 @@ export class DxBallWrapperComponent implements OnInit {
   moveBall(ball: Ball) {
     ball.move();
     this.testForBricks(ball);
+    if (this.testForPlayer(ball)) {
+      ball.changeDirection('vertical');
+    }
     if (!!this.ballTouchesWall(ball)) {
       const wallSide = this.ballTouchesWall(ball);
       if (wallSide === 'vertical' && ball.y + ball.size >= this.h) {
-        // this.gameOver();
+        this.gameOver();
         console.log('Game Over!');
       }
       ball.changeDirection(wallSide);
@@ -169,6 +174,14 @@ export class DxBallWrapperComponent implements OnInit {
       return 'vertical';
     }
     return '';
+  }
+
+  testForPlayer(ball: Ball) {
+    return (
+      ball.y + this.size === this.myPlayer.y &&
+      ball.x >= this.myPlayer.x &&
+      ball.x + this.size < this.myPlayer.x + this.myPlayer.width
+    );
   }
 
   testForBricks(ball: Ball) {
@@ -195,13 +208,13 @@ export class DxBallWrapperComponent implements OnInit {
   //     return false;
   //   }
 
-  //   gameOver() {
-  //     setTimeout(() => {
-  //       this.clearRect();
-  //     }, this.intervalSpeed);
-  //     clearInterval(this.gamePlay);
-  //     // TODO - reveal game over modal
-  //   }
+  gameOver() {
+    setTimeout(() => {
+      this.clearRect();
+    }, this.intervalSpeed);
+    clearInterval(this.gamePlay);
+    // TODO - reveal game over modal
+  }
 
   //   levelUp() {
   //     this.round++;
@@ -244,8 +257,8 @@ class Brick {
   constructor(posX, posY, width, size) {
     this.x = posX;
     this.y = posY;
-    this.width = 4;
-    this.size = width;
+    this.width = width * size;
+    this.size = size;
     this.visible = true;
   }
 
